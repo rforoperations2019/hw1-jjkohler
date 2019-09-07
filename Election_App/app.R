@@ -10,16 +10,15 @@ library(shinyjs)
 election_data <- read.csv("2016_1984.csv", check.names=FALSE)
 election_data[is.na(election_data)] <- 0
 
-# Define UI for application that draws a histogram
+
 ui <- fluidPage(
 
     # Application title
     titlePanel("Presidential Partisan Change"),
 
-    # Sidebar with a slider input for number of bins 
+    # Sidebar with a slider, inputs, and a pie chart
     sidebarLayout(
         sidebarPanel(
-           # tags$style(type = "text/css", ".irs-grid-pol.small {height: 0px;}")
             sliderInput("slider",
                         "Presidential Election Year",
                         min = 1984,
@@ -48,26 +47,30 @@ ui <- fluidPage(
             
         ),
 
-        # Show a plot of the generated distribution
+        # Show a plot of the partisan distribution
         mainPanel(
            plotOutput("distPlot"),
+           
+        # Show a plot of the Other Party Voting distribution
            
            plotOutput("OtherVoting"),
            
            
            
-           # Show data table ---------------------------------------------
+           # Show data table ----------------------------------
            DT::dataTableOutput(outputId = "polarization")
         )
     )
 )
 
-# Define server logic required to draw a histogram
+# Define server logic
 server <- function(input, output) {
     #https://stackoverflow.com/questions/38777741/observe-event-to-hide-action-button-in-shiny
-    observe({ toggle(id="state", condition=!isFALSE(input$hide))})
-    
 
+    #Observe national or state viewing mode change
+        observe({ toggle(id="state", condition=!isFALSE(input$hide))})
+    
+#Main Data set import
     data <- reactive({sub <- subset(election_data, select = c('All Counties', 
                                                        'StateName', 
                                                        input$slider,
@@ -87,44 +90,43 @@ server <- function(input, output) {
 
         }
         )
-
+#Subset data table for proper chart useage
     winner <- reactive({
         test <- data()[,7:8]
         colnames(test) <- c("party","lean")
         test[test['party'] == 'D', 'lean'] <- test['lean']*-1
         test
         })
-    
+#Subsetting for state filered charts   
     winner_st <- reactive({
         test <- state_sub_cty()[,7:8]
         colnames(test) <- c("party","lean")
         test[test['party'] == 'D', 'lean'] <- test['lean']*-1
         test
     })
-
+#Aggregating from county to State Level
     agg <- reactive({aggregate(x = data()[c('Total Votes', 'Dem Votes', 'Rep Votes', 'Other Votes')],
                            by = list('States' = data()$State),
                            FUN = sum)})
-    
+#Only Counties withing a given state
     state_sub_cty <- reactive({
         req(input$state)
         shrunk <- data()[data()$State == input$state,]
         shrunk
         })
-    
+#State aggregated for data table
     state_sub <- reactive({
         req(input$state)
         small <- agg()[agg()$States == input$state,]
         small
     })
-    
+#National Pie Chart Data    
     pie_agg <- reactive({
         t <- as.data.frame(colSums(data()[,c('Dem Votes', 'Rep Votes', 'Other Votes')]))
           colnames(t) <- c('total')
         t
-
     })
-    
+#State Pie Chart Data       
     pie_agg_st <- reactive({
         t <- as.data.frame(colSums(state_sub_cty()[,c('Dem Votes', 'Rep Votes', 'Other Votes')]))
     colnames(t) <- c('total')
@@ -132,7 +134,7 @@ server <- function(input, output) {
     
     })
 
-
+#Primary Partisan Shift Histogram
     output$distPlot <- renderPlot({
 
         # draw a histogram of partisan divide paterns
@@ -142,7 +144,7 @@ server <- function(input, output) {
         plot(h, ylim = c(0,250), xlim = c(-60,60), xlab = 'Partisan Win Margin Relative to National Avg.', ylab = "Counties", 
              col=c("dodgerblue2","mediumslateblue","brown2")[cuts],
              main='Number of Counties by Partisan Lean Percentage')}
-        
+  #State Level      
         if (input$hide == TRUE) {
             h <- hist(winner_st()[,2], breaks = 20, border = 'white')
             cuts <- cut(h$breaks, c(-50,-2,2,50))
@@ -151,7 +153,7 @@ server <- function(input, output) {
                  main='Number of Counties by Partisan Lean Percentage')}
         
     })
-    
+#Other Party Voting Histogram    
     output$OtherVoting <- renderPlot({
         
         # draw a histogram of partisan divide paterns
@@ -168,7 +170,7 @@ server <- function(input, output) {
                  main='Number of Counties by Other Party Vote Share')}
         
     })
-    
+#State Level    
     output$votePie <- renderPlotly({
         if (input$hide == FALSE) {
         p <- plot_ly(pie_agg(), labels = rownames(pie_agg()), values = ~total, type = 'pie',
@@ -190,7 +192,7 @@ server <- function(input, output) {
                    
 })
         
-        
+ #Data Table       
     output$polarization <- DT::renderDataTable(
         
         if((input$choice == 'County')&(input$hide == FALSE)){
