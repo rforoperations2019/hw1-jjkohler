@@ -39,25 +39,38 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
+    data <- reactive({subset(election_data, select = c('All Counties', 
+                                                       'StateName', 
+                                                       input$slider,
+                                                       paste(input$slider,'D',sep = ''),
+                                                       paste(input$slider,'R',sep = ''),
+                                                       paste(input$slider,'O',sep = ''),
+                                                       paste(input$slider,'W',sep = ''),
+                                                       paste(input$slider,'A+',sep = '')
+                                                       )
+                             )
+        }
+        )
+    winner <- reactive({data() %>% mutate(.[[8]] = ifelse(.[[7]] == "D", .[[8]]*-1, .[[8]]))})
+    
+    # winner <- reactive({within(data()[.[,7] == "D", .[,8]] <- data()[,8]*-1)})
+    
+    # within(df, Name[Name == 'John Smith' & State == 'WI'] <- 'John Smith1')
+
     output$distPlot <- renderPlot({
         # generate bins based on input$bins from ui.R
-        winner <- subset(election_data, select = c(paste(input$slider,'W',sep = ''),paste(input$slider,'A+',sep = '')))
-        winner[winner[paste(input$slider,'W',sep = '')] == "D", 
-               paste(input$slider,'A+',sep = '')] <- winner[paste(input$slider,'A+',sep = '')]*-1
-        
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
 
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white')
+
+        #bins <- seq(min(x), max(x), length.out = input$bins + 1)
+
+        # draw a histogram of partisan divide paterns
+        h <- hist(winner()[,2], breaks = 75, border = 'white')
+        cuts <- cut(h$breaks, c(-50,-2,2,50))
+        plot(h, ylim = c(0,250), xlim = c(-60,60), col=c("dodgerblue2","mediumslateblue","brown2")[cuts])
     })
     
     output$polarization <- DT::renderDataTable(
-    DT::datatable(data = election_data[c('All Counties', 'StateName', input$slider,
-                                       paste(input$slider,'D',sep = ''),
-                                       paste(input$slider,'R',sep = ''),
-                                       paste(input$slider,'O',sep = ''),
-                                       paste(input$slider,'W',sep = '')
-                                       )], 
+    DT::datatable(data = data()[,1:7], 
                   options = list(pageLength = 10), 
                   rownames = FALSE)
     )
