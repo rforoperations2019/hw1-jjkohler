@@ -9,6 +9,7 @@ library(shinyWidgets)
 library(shinyjs)
 election_data <- read.csv("2016_1984.csv", check.names=FALSE)
 election_data[is.na(election_data)] <- 0
+
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
@@ -117,11 +118,18 @@ server <- function(input, output) {
         small
     })
     
-    pie_agg <- reactive({first <- 
+    pie_agg <- reactive({
         t <- as.data.frame(colSums(data()[,c('Dem Votes', 'Rep Votes', 'Other Votes')]))
           colnames(t) <- c('total')
         t
 
+    })
+    
+    pie_agg_st <- reactive({
+        t <- as.data.frame(colSums(state_sub_cty()[,c('Dem Votes', 'Rep Votes', 'Other Votes')]))
+    colnames(t) <- c('total')
+    t
+    
     })
 
 
@@ -162,18 +170,25 @@ server <- function(input, output) {
     })
     
     output$votePie <- renderPlotly({
-        p <- plot_ly(pie_agg(), values = ~total, type = 'pie') %>%
-            layout(title = 'United States Presidential Vote Breakdown',
+        if (input$hide == FALSE) {
+        p <- plot_ly(pie_agg(), labels = rownames(pie_agg()), values = ~total, type = 'pie',
+                     marker = list(colors = c("blue","red","green"),
+                     line = list(color = '#FFFFFF', width = 1))) %>%
+            layout(title = 'Presidential Vote',
                    xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                    yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
-        p
+        }
         
-            #     pie <- bp + coord_polar("y", start=0)
-    # pie + scale_fill_brewer("Blues") + blank_theme +
-    #     theme(axis.text.x=element_blank())+
-    #     geom_text(aes(y = value/3 + c(0, cumsum(value)[-length(value)]), 
-    #                   label = percent(value/100)), size=5)
-    })
+        else {
+            p <- plot_ly(pie_agg_st(), labels = rownames(pie_agg()), values = ~total, type = 'pie',
+                         marker = list(colors = c("blue","red","green"),
+                                       line = list(color = '#FFFFFF', width = 1))) %>%
+                layout(title = 'Presidential Vote',
+                       xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                       yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+        }
+                   
+})
         
         
     output$polarization <- DT::renderDataTable(
