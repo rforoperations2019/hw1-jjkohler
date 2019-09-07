@@ -41,7 +41,10 @@ server <- function(input, output) {
 
     output$distPlot <- renderPlot({
         # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
+        winner <- subset(election_data, select = c(paste(input$slider,'W',sep = ''),paste(input$slider,'A+',sep = '')))
+        winner[winner[paste(input$slider,'W',sep = '')] == "D", 
+               paste(input$slider,'A+',sep = '')] <- winner[paste(input$slider,'A+',sep = '')]*-1
+        
         bins <- seq(min(x), max(x), length.out = input$bins + 1)
 
         # draw the histogram with the specified number of bins
@@ -52,7 +55,8 @@ server <- function(input, output) {
     DT::datatable(data = election_data[c('All Counties', 'StateName', input$slider,
                                        paste(input$slider,'D',sep = ''),
                                        paste(input$slider,'R',sep = ''),
-                                       paste(input$slider,'O',sep = '')
+                                       paste(input$slider,'O',sep = ''),
+                                       paste(input$slider,'W',sep = '')
                                        )], 
                   options = list(pageLength = 10), 
                   rownames = FALSE)
