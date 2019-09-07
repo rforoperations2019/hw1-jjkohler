@@ -40,7 +40,9 @@ ui <- fluidPage(
                         label = "State :",
                         choices = list('States' = sort(election_data$StateName)),
                         selected = list('States' = sort(election_data$StateName))[1]
-                        )
+                        ),
+            plotlyOutput("votePie"),
+            verbatimTextOutput("event")
             
             
         ),
@@ -51,7 +53,7 @@ ui <- fluidPage(
            
            plotOutput("OtherVoting"),
            
-           plotOutput("votePie"),
+           
            
            # Show data table ---------------------------------------------
            DT::dataTableOutput(outputId = "polarization")
@@ -91,42 +93,80 @@ server <- function(input, output) {
         test[test['party'] == 'D', 'lean'] <- test['lean']*-1
         test
         })
+    
+    winner_st <- reactive({
+        test <- state_sub_cty()[,7:8]
+        colnames(test) <- c("party","lean")
+        test[test['party'] == 'D', 'lean'] <- test['lean']*-1
+        test
+    })
 
     agg <- reactive({aggregate(x = data()[c('Total Votes', 'Dem Votes', 'Rep Votes', 'Other Votes')],
                            by = list('States' = data()$State),
                            FUN = sum)})
-    state_sub <- reactive({
+    
+    state_sub_cty <- reactive({
         req(input$state)
         shrunk <- data()[data()$State == input$state,]
         shrunk
-        
-        
+        })
+    
+    state_sub <- reactive({
+        req(input$state)
+        small <- agg()[agg()$States == input$state,]
+        small
+    })
+    
+    pie_agg <- reactive({first <- 
+        t <- as.data.frame(colSums(data()[,c('Dem Votes', 'Rep Votes', 'Other Votes')]))
+          colnames(t) <- c('total')
+        t
+
     })
 
 
     output$distPlot <- renderPlot({
 
         # draw a histogram of partisan divide paterns
+        if (input$hide == FALSE) {
         h <- hist(winner()[,2], breaks = 75, border = 'white')
         cuts <- cut(h$breaks, c(-50,-2,2,50))
-        plot(h, ylim = c(0,250), xlim = c(-60,60), xlab = 'Partisan Win Margin Relative to National Avg.', ylab = "Counties", col=c("dodgerblue2","mediumslateblue","brown2")[cuts],
-             main='Number of Counties by Partisan Lean Percentage')
+        plot(h, ylim = c(0,250), xlim = c(-60,60), xlab = 'Partisan Win Margin Relative to National Avg.', ylab = "Counties", 
+             col=c("dodgerblue2","mediumslateblue","brown2")[cuts],
+             main='Number of Counties by Partisan Lean Percentage')}
+        
+        if (input$hide == TRUE) {
+            h <- hist(winner_st()[,2], breaks = 20, border = 'white')
+            cuts <- cut(h$breaks, c(-50,-2,2,50))
+            plot(h, ylim = c(0,20), xlim = c(-60,60), xlab = 'Partisan Win Margin Relative to National Avg.', 
+                 ylab = "Counties", col=c("dodgerblue2","mediumslateblue","brown2")[cuts],
+                 main='Number of Counties by Partisan Lean Percentage')}
+        
     })
     
     output$OtherVoting <- renderPlot({
         
         # draw a histogram of partisan divide paterns
+        
+        if (input$hide == FALSE) {
         h <- hist(data()[,9], breaks = 75, border = 'white')
         cuts <- cut(h$breaks, c(0,.15,.3,.5))
         plot(h, xlim = c(0,.4), ylim = c(0,300),xlab = 'Percent Other Party Vote', ylab = "Counties", col=c("palegreen2","palegreen3","palegreen4")[cuts],
-        main='Number of Counties by Other Party Vote Share')
+        main='Number of Counties by Other Party Vote Share')}
+        if (input$hide == TRUE) {
+            h <- hist(state_sub_cty()[,9], breaks = 20, border = 'white')
+            cuts <- cut(h$breaks, c(0,.15,.3,.5))
+            plot(h, xlim = c(0,.4), ylim = c(0,20),xlab = 'Percent Other Party Vote', ylab = "Counties", col=c("palegreen2","palegreen3","palegreen4")[cuts],
+                 main='Number of Counties by Other Party Vote Share')}
+        
     })
     
-    output$VotePie <- renderPlot({
-        p <- plot_ly(agg(), labels = ~Categorie, values = ~X1960, type = 'pie') %>%
-            layout(title = 'United States Personal Expenditures by Categories in 1960',
+    output$votePie <- renderPlotly({
+        p <- plot_ly(pie_agg(), values = ~total, type = 'pie') %>%
+            layout(title = 'United States Presidential Vote Breakdown',
                    xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                    yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+        p
         
             #     pie <- bp + coord_polar("y", start=0)
     # pie + scale_fill_brewer("Blues") + blank_theme +
@@ -137,16 +177,23 @@ server <- function(input, output) {
         
         
     output$polarization <- DT::renderDataTable(
+        
         if((input$choice == 'County')&(input$hide == FALSE)){
     DT::datatable(data = data()[,1:7], 
                   options = list(pageLength = 10), 
                   rownames = FALSE)}
-        else if((input$choice == 'County') & (input$hide == TRUE)){
-        DT::datatable(data = state_sub()[,1:7], 
+        
+         else if((input$choice == 'County') & (input$hide == TRUE)){
+        DT::datatable(data = state_sub_cty()[,1:7], 
+                      options = list(pageLength = 10), 
+                      rownames = FALSE)}
+       
+        else if((input$choice == 'State') & (input$hide == TRUE)){
+        DT::datatable(data = state_sub()[,1:5], 
                       options = list(pageLength = 10), 
                       rownames = FALSE)}
         else{
-    DT::datatable(data = agg()[,1:5], 
+        DT::datatable(data = agg()[,1:5], 
                   options = list(pageLength = 10), 
                   rownames = FALSE)
         }
