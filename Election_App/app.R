@@ -68,6 +68,7 @@ server <- function(input, output) {
                              ) 
     colnames(sub) <- c('County', 'State', 'Total Votes', 'Dem Votes', 'Rep Votes', 'Other Votes', "Win","Lean")
     sub[3:6] <- lapply(sub[3:6], as.integer)
+    # sub[is.na(sub)] <- 0
     sub
 
         }
