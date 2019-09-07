@@ -27,15 +27,15 @@ ui <- fluidPage(
                         sep = '',
                         ticks = TRUE),
             
-            # checkboxGroupButtons(
-            #     inputId = "somevalue", label = "Data Aggregation Level :", 
-            #     choices = c("Choice A", "Choice B"), 
-            #     justified = TRUE, status = "primary",
-            #     checkIcon = list(yes = icon("ok", lib = "glyphicon"), no = icon("remove", lib = "glyphicon")),
-                
+
             radioButtons(inputId="choice", label="Data Table Aggregation Level :",
-                             choices=c("State","County"))
-            # )
+                             choices=c("State","County")),
+            
+            selectInput(inputId = "state", 
+                        label = "State :",
+                        choices = list('States' = sort(election_data$StateName)), 
+                        selected = "critics_score")
+            
         ),
 
         # Show a plot of the generated distribution
