@@ -30,6 +30,8 @@ ui <- fluidPage(
         mainPanel(
            plotOutput("distPlot"),
            
+           plotOutput("OtherVoting"),
+           
            # Show data table ---------------------------------------------
            DT::dataTableOutput(outputId = "polarization")
         )
@@ -46,7 +48,8 @@ server <- function(input, output) {
                                                        paste(input$slider,'R',sep = ''),
                                                        paste(input$slider,'O',sep = ''),
                                                        paste(input$slider,'W',sep = ''),
-                                                       paste(input$slider,'A+',sep = '')
+                                                       paste(input$slider,'W+',sep = ''),
+                                                       paste(input$slider,'%O',sep = '')
                                                        )
                                     
                              ) 
@@ -71,6 +74,14 @@ server <- function(input, output) {
         h <- hist(winner()[,2], breaks = 75, border = 'white')
         cuts <- cut(h$breaks, c(-50,-2,2,50))
         plot(h, ylim = c(0,250), xlim = c(-60,60), col=c("dodgerblue2","mediumslateblue","brown2")[cuts])
+    })
+    
+    output$OtherVoting <- renderPlot({
+        
+        # draw a histogram of partisan divide paterns
+        h <- hist(data()[,9], breaks = 75, border = 'white')
+        cuts <- cut(h$breaks, c(0,.15,.3,.5))
+        plot(h, xlim = c(0,.4), ylim = c(0,300), col=c("palegreen2","palegreen3","palegreen4")[cuts])
     })
     
     output$polarization <- DT::renderDataTable(
