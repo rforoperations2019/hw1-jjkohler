@@ -5,8 +5,8 @@ account: jjkohler
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1161283
-bundleId: 2394667
+bundleId: 2394773
 url: https://jjkohler.shinyapps.io/Election_App/
-when: 1567868817.38772
+when: 1567872276.93775
 asMultiple: FALSE
 asStatic: FALSE

@@ -7,6 +7,7 @@ library(tools)
 library(plotly)
 library(shinyWidgets)
 election_data <- read.csv("2016_1984.csv", check.names=FALSE)
+election_data[is.na(election_data)] <- 0
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
@@ -68,7 +69,7 @@ server <- function(input, output) {
                              ) 
     colnames(sub) <- c('County', 'State', 'Total Votes', 'Dem Votes', 'Rep Votes', 'Other Votes', "Win","Lean")
     sub[3:6] <- lapply(sub[3:6], as.integer)
-    # sub[is.na(sub)] <- 0
+    sub[is.na(sub)] <- 0
     sub
 
         }
@@ -105,7 +106,7 @@ server <- function(input, output) {
     })
     
     output$VotePie <- renderPlot({
-        p <- plot_ly(data, labels = ~Categorie, values = ~X1960, type = 'pie') %>%
+        p <- plot_ly(agg(), labels = ~Categorie, values = ~X1960, type = 'pie') %>%
             layout(title = 'United States Personal Expenditures by Categories in 1960',
                    xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                    yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
