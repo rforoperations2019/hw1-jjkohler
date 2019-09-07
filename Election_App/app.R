@@ -6,6 +6,7 @@ library(dplyr)
 library(tools)
 library(plotly)
 library(shinyWidgets)
+library(shinyjs)
 election_data <- read.csv("2016_1984.csv", check.names=FALSE)
 election_data[is.na(election_data)] <- 0
 # Define UI for application that draws a histogram
@@ -31,10 +32,15 @@ ui <- fluidPage(
             radioButtons(inputId="choice", label="Data Table Aggregation Level :",
                              choices=c("State","County")),
             
+            useShinyjs(),
+     
+            checkboxInput("hide", "Break Down by State :", FALSE),
+            
             selectInput(inputId = "state", 
                         label = "State :",
                         choices = list('States' = sort(election_data$StateName)), 
                         selected = "critics_score")
+            
             
         ),
 
@@ -54,7 +60,35 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-
+    
+    observe({ toggle(id="state", condition=!isFALSE(input$hide))})
+    
+    # observe({
+    #     shinyjs::hide("hide")
+    #     
+    #     if(clicked(=))
+    #         shinyjs::show("hide")
+    # })
+    # 
+    # clicked <- reactive({
+    #     if (input$hide == TRUE){
+    #         1
+    #     }
+    #     else { 0 }
+    # })
+    # observeEvent(input$hide,{
+    #     
+    #     if(input$hide== TRUE){
+    #         output$menu <- renderMenu({
+    #             sidebarMenu(
+    #                 menuItem("Menu item", 
+    #                          menuSubItem("analysis 2"), 
+    #                          menuSubItem("analysis 3")))}) 
+    #     }
+    # 
+    # }
+    # )
+    
     data <- reactive({sub <- subset(election_data, select = c('All Counties', 
                                                        'StateName', 
                                                        input$slider,
