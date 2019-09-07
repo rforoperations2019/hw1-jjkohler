@@ -4,7 +4,8 @@ library(DT)
 library(stringr)
 library(dplyr)
 library(tools)
-election_data <- read.csv("2016_1984.csv")
+library(shinyWidgets)
+election_data <- read.csv("2016_1984.csv", check.names=FALSE)
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
@@ -15,14 +16,14 @@ ui <- fluidPage(
     sidebarLayout(
         sidebarPanel(
            # tags$style(type = "text/css", ".irs-grid-pol.small {height: 0px;}")
-            sliderInput("bins",
-                        "Number of bins:",
+            sliderInput("slider",
+                        "Presidential Election Year",
                         min = 1984,
                         max = 2016,
                         value = 1984,
                         step = 4,
                         sep = '',
-                        ticks = FALSE)
+                        ticks = TRUE)
         ),
 
         # Show a plot of the generated distribution
@@ -48,7 +49,11 @@ server <- function(input, output) {
     })
     
     output$polarization <- DT::renderDataTable(
-    DT::datatable(data = election_data[, 1:7], 
+    DT::datatable(data = election_data[c('All Counties', 'StateName', input$slider,
+                                       paste(input$slider,'D',sep = ''),
+                                       paste(input$slider,'R',sep = ''),
+                                       paste(input$slider,'O',sep = '')
+                                       )], 
                   options = list(pageLength = 10), 
                   rownames = FALSE)
     )
