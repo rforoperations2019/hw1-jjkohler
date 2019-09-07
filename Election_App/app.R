@@ -39,7 +39,7 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
-    data <- reactive({subset(election_data, select = c('All Counties', 
+    data <- reactive({sub <- subset(election_data, select = c('All Counties', 
                                                        'StateName', 
                                                        input$slider,
                                                        paste(input$slider,'D',sep = ''),
@@ -48,20 +48,24 @@ server <- function(input, output) {
                                                        paste(input$slider,'W',sep = ''),
                                                        paste(input$slider,'A+',sep = '')
                                                        )
-                             )
+                                    
+                             ) 
+    colnames(sub) <- c('County', 'State', 'Total Votes', 'Dem Votes', 'Rep Votes', 'Other Votes', "Win","Lean")
+    sub
+
         }
         )
-    winner <- reactive({data() %>% mutate(.[[8]] = ifelse(.[[7]] == "D", .[[8]]*-1, .[[8]]))})
-    
-    # winner <- reactive({within(data()[.[,7] == "D", .[,8]] <- data()[,8]*-1)})
-    
-    # within(df, Name[Name == 'John Smith' & State == 'WI'] <- 'John Smith1')
+
+    winner <- reactive({
+        test <- data()[,7:8]
+        colnames(test) <- c("party","lean")
+        test[test['party'] == 'D', 'lean'] <- test['lean']*-1
+        test
+        })
+
+
 
     output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-
-
-        #bins <- seq(min(x), max(x), length.out = input$bins + 1)
 
         # draw a histogram of partisan divide paterns
         h <- hist(winner()[,2], breaks = 75, border = 'white')
