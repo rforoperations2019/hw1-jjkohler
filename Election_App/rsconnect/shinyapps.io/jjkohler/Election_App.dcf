@@ -1,0 +1,12 @@
+name: Election_App
+title: Election_App
+username:
+account: jjkohler
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1161283
+bundleId: 2394667
+url: https://jjkohler.shinyapps.io/Election_App/
+when: 1567868817.38772
+asMultiple: FALSE
+asStatic: FALSE

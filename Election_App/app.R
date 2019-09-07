@@ -32,7 +32,7 @@ ui <- fluidPage(
             #     justified = TRUE, status = "primary",
             #     checkIcon = list(yes = icon("ok", lib = "glyphicon"), no = icon("remove", lib = "glyphicon")),
                 
-            radioButtons(inputId="choice", label="Aggregation Level :",
+            radioButtons(inputId="choice", label="Data Table Aggregation Level :",
                              choices=c("State","County"))
             # )
         ),
@@ -67,6 +67,7 @@ server <- function(input, output) {
                                     
                              ) 
     colnames(sub) <- c('County', 'State', 'Total Votes', 'Dem Votes', 'Rep Votes', 'Other Votes', "Win","Lean")
+    sub[3:6] <- lapply(sub[3:6], as.integer)
     sub
 
         }
@@ -80,7 +81,7 @@ server <- function(input, output) {
         })
 
     agg <- reactive({aggregate(x = data()[c('Total Votes', 'Dem Votes', 'Rep Votes', 'Other Votes')],
-                           by = list(unique.values = data()$State),
+                           by = list('States' = data()$State),
                            FUN = sum)})
 
 
@@ -89,7 +90,7 @@ server <- function(input, output) {
         # draw a histogram of partisan divide paterns
         h <- hist(winner()[,2], breaks = 75, border = 'white')
         cuts <- cut(h$breaks, c(-50,-2,2,50))
-        plot(h, ylim = c(0,250), xlim = c(-60,60), col=c("dodgerblue2","mediumslateblue","brown2")[cuts],
+        plot(h, ylim = c(0,250), xlim = c(-60,60), xlab = 'Partisan Win Margin Relative to National Avg.', ylab = "Counties", col=c("dodgerblue2","mediumslateblue","brown2")[cuts],
              main='Number of Counties by Partisan Lean Percentage')
     })
     
@@ -98,7 +99,8 @@ server <- function(input, output) {
         # draw a histogram of partisan divide paterns
         h <- hist(data()[,9], breaks = 75, border = 'white')
         cuts <- cut(h$breaks, c(0,.15,.3,.5))
-        plot(h, xlim = c(0,.4), ylim = c(0,300), col=c("palegreen2","palegreen3","palegreen4")[cuts])
+        plot(h, xlim = c(0,.4), ylim = c(0,300),xlab = 'Percent Other Party Vote', ylab = "Counties", col=c("palegreen2","palegreen3","palegreen4")[cuts],
+        main='Number of Counties by Other Party Vote Share')
     })
     
     output$VotePie <- renderPlot({
@@ -116,9 +118,15 @@ server <- function(input, output) {
         
         
     output$polarization <- DT::renderDataTable(
+        if(input$choice == 'County'){
     DT::datatable(data = data()[,1:7], 
                   options = list(pageLength = 10), 
+                  rownames = FALSE)}
+        else{
+    DT::datatable(data = agg()[,1:5], 
+                  options = list(pageLength = 10), 
                   rownames = FALSE)
+        }
     )
 }
 
