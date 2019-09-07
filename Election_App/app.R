@@ -38,8 +38,9 @@ ui <- fluidPage(
             
             selectInput(inputId = "state", 
                         label = "State :",
-                        choices = list('States' = sort(election_data$StateName)), 
-                        selected = "critics_score")
+                        choices = list('States' = sort(election_data$StateName)),
+                        selected = list('States' = sort(election_data$StateName))[1]
+                        )
             
             
         ),
@@ -60,35 +61,10 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-    
+    #https://stackoverflow.com/questions/38777741/observe-event-to-hide-action-button-in-shiny
     observe({ toggle(id="state", condition=!isFALSE(input$hide))})
     
-    # observe({
-    #     shinyjs::hide("hide")
-    #     
-    #     if(clicked(=))
-    #         shinyjs::show("hide")
-    # })
-    # 
-    # clicked <- reactive({
-    #     if (input$hide == TRUE){
-    #         1
-    #     }
-    #     else { 0 }
-    # })
-    # observeEvent(input$hide,{
-    #     
-    #     if(input$hide== TRUE){
-    #         output$menu <- renderMenu({
-    #             sidebarMenu(
-    #                 menuItem("Menu item", 
-    #                          menuSubItem("analysis 2"), 
-    #                          menuSubItem("analysis 3")))}) 
-    #     }
-    # 
-    # }
-    # )
-    
+
     data <- reactive({sub <- subset(election_data, select = c('All Counties', 
                                                        'StateName', 
                                                        input$slider,
@@ -119,6 +95,13 @@ server <- function(input, output) {
     agg <- reactive({aggregate(x = data()[c('Total Votes', 'Dem Votes', 'Rep Votes', 'Other Votes')],
                            by = list('States' = data()$State),
                            FUN = sum)})
+    state_sub <- reactive({
+        req(input$state)
+        shrunk <- data()[data()$State == input$state,]
+        shrunk
+        
+        
+    })
 
 
     output$distPlot <- renderPlot({
@@ -154,10 +137,14 @@ server <- function(input, output) {
         
         
     output$polarization <- DT::renderDataTable(
-        if(input$choice == 'County'){
+        if((input$choice == 'County')&(input$hide == FALSE)){
     DT::datatable(data = data()[,1:7], 
                   options = list(pageLength = 10), 
                   rownames = FALSE)}
+        else if((input$choice == 'County') & (input$hide == TRUE)){
+        DT::datatable(data = state_sub()[,1:7], 
+                      options = list(pageLength = 10), 
+                      rownames = FALSE)}
         else{
     DT::datatable(data = agg()[,1:5], 
                   options = list(pageLength = 10), 
